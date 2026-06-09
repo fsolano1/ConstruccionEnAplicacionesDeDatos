@@ -498,9 +498,21 @@ function renderApiKeysTable() {
         
         const badgeClass = key.status === 'Active' ? 'text-primary bg-primary/10 border-primary/20' : 'text-error bg-error/10 border-error/20';
         
+        // Mask the token key: show prefix, mask body, show suffix
+        const maskedToken = key.token.length > 15 
+            ? `${key.token.substring(0, 10)}...${key.token.substring(key.token.length - 4)}`
+            : key.token;
+            
         tr.innerHTML = `
             <td class="py-3 px-4 text-on-surface font-semibold">${escapeHtml(key.name)}</td>
-            <td class="py-3 px-4 text-on-surface-variant font-mono">${key.token}</td>
+            <td class="py-3 px-4 text-on-surface-variant font-mono flex items-center gap-1.5">
+                <span>${maskedToken}</span>
+                ${key.status === 'Active' ? `
+                    <button onclick="copyToClipboard('${key.token}')" class="text-primary hover:text-primary-fixed p-1 rounded hover:bg-surface-variant/30 transition-all" title="Copy Key">
+                        <span class="material-symbols-outlined text-[14px] align-middle">content_copy</span>
+                    </button>
+                ` : ''}
+            </td>
             <td class="py-3 px-4 text-on-surface-variant">${key.created}</td>
             <td class="py-3 px-4">
                 <span class="px-2 py-0.5 rounded text-xs border ${badgeClass}">${key.status}</span>
@@ -541,7 +553,12 @@ document.getElementById('generateKeyForm').addEventListener('submit', (e) => {
     
     input.value = '';
     renderApiKeysTable();
-    addLog(`System Credentials: Generated new key '${newKey.name}' (${newKey.token}).`, "success");
+    
+    const maskedLogToken = newKey.token.length > 15 
+        ? `${newKey.token.substring(0, 10)}...${newKey.token.substring(newKey.token.length - 4)}`
+        : newKey.token;
+        
+    addLog(`System Credentials: Generated new key '${newKey.name}' (${maskedLogToken}).`, "success");
     showToast("API Key successfully generated!", "success");
 });
 
@@ -964,3 +981,35 @@ document.getElementById('supportForm').addEventListener('submit', (e) => {
     
     document.getElementById('supportForm').reset();
 });
+
+// Global copy utility helper
+window.copyToClipboard = function(text) {
+    navigator.clipboard.writeText(text)
+        .then(() => {
+            addLog("System: Copied sensitive API credential/token to clipboard.");
+            showToast("Copied to clipboard!", "success");
+        })
+        .catch(err => {
+            console.error("Clipboard copy failed:", err);
+            showToast("Failed to copy credential", "error");
+        });
+};
+
+// Console token field visibility toggle
+const toggleTokenBtn = document.getElementById('toggleConsoleTokenVisibilityBtn');
+const tokenInputField = document.getElementById('apiConsoleToken');
+
+if (toggleTokenBtn && tokenInputField) {
+    toggleTokenBtn.addEventListener('click', () => {
+        const iconSpan = toggleTokenBtn.querySelector('.material-symbols-outlined');
+        if (tokenInputField.type === 'password') {
+            tokenInputField.type = 'text';
+            if (iconSpan) iconSpan.innerText = 'visibility_off';
+            addLog("UI Action: Revealed API Console Token.");
+        } else {
+            tokenInputField.type = 'password';
+            if (iconSpan) iconSpan.innerText = 'visibility';
+            addLog("UI Action: Masked API Console Token.");
+        }
+    });
+}
