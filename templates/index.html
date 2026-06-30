@@ -116,7 +116,7 @@
         </div>
         <div class="flex items-center gap-4">
             <span class="text-xs text-on-surface-variant hidden md:inline-block">v1.2.0 • Local Sentiment Suite</span>
-            <button onclick="handleSimulateLogin()" class="bg-secondary-container/20 hover:bg-secondary-container/40 text-secondary border border-secondary/20 py-1.5 px-4 rounded text-xs font-semibold transition-all active:scale-95">
+            <button onclick="handleSimulateLogin()" class="hidden bg-secondary-container/20 hover:bg-secondary-container/40 text-secondary border border-secondary/20 py-1.5 px-4 rounded text-xs font-semibold transition-all active:scale-95">
                 Quick Start
             </button>
         </div>
@@ -158,7 +158,7 @@
                 </div>
 
                 <!-- Simulation fallback -->
-                <div class="bg-surface-container border border-outline-variant rounded-lg p-5 flex flex-col justify-between flex-1">
+                <div class="bg-surface-container border border-outline-variant rounded-lg p-5 flex flex-col justify-between flex-1 hidden">
                     <div class="space-y-1">
                         <span class="text-[10px] font-label-caps text-on-surface-variant font-bold tracking-wider">DEVELOPER CONSOLE FALLBACK</span>
                         <p class="text-xs text-on-surface-variant">Bypass external authorization and run locally using developer simulated claims.</p>
@@ -639,8 +639,18 @@ print(resp.json())
                         <h2 class="font-display-lg text-display-lg text-on-surface">Model Validation Dashboard</h2>
                         <p class="text-on-surface-variant mt-1">Validate sentiment predictions against the Twitter Validation Dataset.</p>
                     </div>
-                    <div class="flex items-center gap-2">
-                        <span class="flex items-center gap-1.5 text-xs font-label-caps text-label-caps text-on-surface-variant px-3 py-1 border border-outline-variant rounded bg-surface-container-low">
+                    <div class="flex items-center gap-3">
+                        <div class="flex items-center gap-1.5 bg-surface-container-low border border-outline-variant rounded px-2.5 py-1 text-xs">
+                            <span class="text-on-surface-variant font-label-caps font-bold">Dataset Limit:</span>
+                            <select id="validationLimitSelect" class="bg-surface-container border-none text-on-surface text-xs rounded py-0.5 px-2 focus:ring-1 focus:ring-primary outline-none cursor-pointer">
+                                <option value="20" selected>20 Records</option>
+                                <option value="30">30 Records</option>
+                                <option value="50">50 Records</option>
+                                <option value="100">100 Records</option>
+                                <option value="all">Entire DB</option>
+                            </select>
+                        </div>
+                        <span class="flex items-center gap-1.5 text-xs font-label-caps text-label-caps text-on-surface-variant px-3 py-1.5 border border-outline-variant rounded bg-surface-container-low">
                             <span class="w-2 h-2 rounded-full bg-primary-container animate-pulse"></span>
                             LOCAL INFERENCE ACTIVE
                         </span>
@@ -1368,14 +1378,14 @@ Click "Send Request" to perform API fetch calls.
             </div>
         </div>
         
-        <div class="relative flex py-2 items-center">
+        <div class="relative flex py-2 items-center hidden">
             <div class="flex-grow border-t border-outline-variant/20"></div>
             <span class="flex-shrink mx-4 text-[10px] font-label-caps text-on-surface-variant">OR TEST LOCALLY</span>
             <div class="flex-grow border-t border-outline-variant/20"></div>
         </div>
         
         <!-- Simulation fallback -->
-        <button id="simulateLoginBtnModal" class="w-full flex items-center justify-center gap-2 bg-secondary-container/20 hover:bg-secondary-container/40 text-secondary border border-secondary/20 py-2.5 px-4 rounded font-semibold text-sm transition-all duration-200 active:scale-95">
+        <button id="simulateLoginBtnModal" class="hidden w-full flex items-center justify-center gap-2 bg-secondary-container/20 hover:bg-secondary-container/40 text-secondary border border-secondary/20 py-2.5 px-4 rounded font-semibold text-sm transition-all duration-200 active:scale-95">
             <span class="material-symbols-outlined">terminal</span>
             <span>Simulate Developer Login</span>
         </button>

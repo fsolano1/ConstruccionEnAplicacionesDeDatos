@@ -1189,7 +1189,11 @@ window.reloadMatplotlibCharts = async function() {
 window.loadValidationResults = async function(force = false) {
     if (validationData && !force) return; // Load only once per session or reload on demand
 
-    addLog("Model Validation: Requesting dataset evaluation from FastAPI backend...");
+    const limitSelect = document.getElementById('validationLimitSelect');
+    const limit = limitSelect ? limitSelect.value : '20';
+    if (limitSelect) limitSelect.disabled = true;
+
+    addLog(`Model Validation: Requesting dataset evaluation (${limit} records) from FastAPI backend...`);
     
     try {
         const token = localStorage.getItem('google_token');
@@ -1198,7 +1202,7 @@ window.loadValidationResults = async function(force = false) {
             headers['Authorization'] = `Bearer ${token}`;
         }
         
-        const response = await fetch('/api/validation-results', { headers });
+        const response = await fetch(`/api/validation-results?limit=${limit}`, { headers });
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         
         validationData = await response.json();
@@ -1206,18 +1210,22 @@ window.loadValidationResults = async function(force = false) {
         renderValidationTable(validationData.records);
         renderValidationCharts(validationData.distributions);
         
-        // Render Latency SVG chart and reload Matplotlib charts if the charts panel is visible
-        const valChartsPanel = document.getElementById('val-content-charts');
-        if (valChartsPanel && !valChartsPanel.classList.contains('hidden')) {
-            renderValidationLatencyChart(validationData.records, validationData.metrics.avg_latency_ms);
-            reloadMatplotlibCharts();
-        }
+        // Always redraw Overview SVG chart if the container exists
+        const chartTimeRangeEl = document.getElementById('chartTimeRange');
+        const chartRange = chartTimeRangeEl ? chartTimeRangeEl.value : '10';
+        drawSVGChart(chartRange);
+
+        // Always render validation latency chart and reload Matplotlib charts
+        renderValidationLatencyChart(validationData.records, validationData.metrics.avg_latency_ms);
+        reloadMatplotlibCharts();
         
         addLog(`Model Validation: Successfully loaded ${validationData.records.length} samples. Alignment Accuracy: ${(validationData.metrics.accuracy * 100).toFixed(1)}%.`, "success");
     } catch (err) {
         console.error("Error loading validation results:", err);
         addLog(`Model Validation Error: Failed to fetch results. ${err.message}`, "error");
         showToast("Error loading model validation data", "error");
+    } finally {
+        if (limitSelect) limitSelect.disabled = false;
     }
 };
 
@@ -2038,9 +2046,15 @@ function applyValidationTableFilters() {
 
 const tableSearch = document.getElementById('valTableSearch');
 const tableFilter = document.getElementById('valTableFilter');
+const validationLimitSelect = document.getElementById('validationLimitSelect');
 
 if (tableSearch) tableSearch.addEventListener('input', applyValidationTableFilters);
 if (tableFilter) tableFilter.addEventListener('change', applyValidationTableFilters);
+if (validationLimitSelect) {
+    validationLimitSelect.addEventListener('change', () => {
+        loadValidationResults(true); // force reload
+    });
+}
 
 // Redraw validation latency chart on window resize
 window.addEventListener('resize', () => {

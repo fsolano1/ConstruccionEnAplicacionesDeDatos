@@ -50,6 +50,7 @@ class EditSampleInput(BaseModel):
 
 # Base de datos en memoria (se inicializa al arrancar la aplicación)
 validation_records = []
+current_limit = "20"
 
 # --- SISTEMA DE AUTENTICACIÓN ---
 def decode_token(auth_header):
@@ -118,16 +119,23 @@ def run_records_inference():
             is_correct = True
         r['correct'] = is_correct
 
-def initialize_dataset():
-    global validation_records
+def initialize_dataset(limit: str = "20"):
+    global validation_records, current_limit
+    current_limit = limit
     csv_path = get_validation_csv_path()
     if not csv_path or not os.path.exists(csv_path):
         print("Warning: No se encontró el dataset para inicializar la base de datos en memoria.")
         return
 
-    print("Cargando y preparando base de datos en memoria...")
+    print(f"Cargando y preparando base de datos en memoria con límite {limit}...")
     columnas = ['ID', 'Entity', 'Sentiment', 'Tweet']
-    df_val = pd.read_csv(csv_path, names=columnas).dropna().head(20)
+    df_val = pd.read_csv(csv_path, names=columnas).dropna()
+    if limit != "all":
+        try:
+            val_limit = int(limit)
+            df_val = df_val.head(val_limit)
+        except ValueError:
+            df_val = df_val.head(20)
 
     validation_records = []
     for _, row in df_val.iterrows():
@@ -184,10 +192,13 @@ def analizar_texto(input_data: TweetInput, user_info: dict = Depends(verify_auth
 
 # 4. Endpoint de obtención de los datos del dataset y métricas (Autenticado)
 @app.get("/api/validation-results")
-def get_validation_results(user_info: dict = Depends(verify_authentication)):
-    global validation_records
-    if not validation_records:
-        initialize_dataset()
+def get_validation_results(limit: str = None, user_info: dict = Depends(verify_authentication)):
+    global validation_records, current_limit
+    if limit is None:
+        limit = current_limit
+
+    if not validation_records or limit != current_limit:
+        initialize_dataset(limit)
 
     correct_count = sum(1 for r in validation_records if r['correct'])
     total_latency = sum(r['latency_ms'] for r in validation_records)
